@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
-conn = http.client.HTTPSConnection("api.gpt.ge")
+conn = http.client.HTTPSConnection("dashscope.aliyuncs.com")
 payload = json.dumps({
-   "model": "o3-mini",
+   "model": "qwen-plus",
    "messages": [
       {
          "role": "user",
@@ -27,7 +27,7 @@ headers = {
    'Content-Type': 'application/json',
    'Authorization': f'Bearer {api_token}'
 }
-conn.request("POST", "/v1/chat/completions", payload, headers)
+conn.request("POST", "/compatible-mode/v1/chat/completions", payload, headers)
 res = conn.getresponse()
 data = res.read()
 

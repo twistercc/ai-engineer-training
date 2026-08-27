@@ -24,13 +24,20 @@ client = OpenAI(
 # OpenAI Embeddings 实现
 # =============================================================================
 class OpenAIEmbeddings(Embeddings):
-    def __init__(self, model: str = "text-embedding-3-small"):
+    def __init__(self, model: str = "text-embedding-v3"):
         self.model = model
         self.client = client
         
+    # 百炼 text-embedding-v3 单次请求最多 10 条输入，需分批
+    BATCH_SIZE = 10
+
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        response = self.client.embeddings.create(model=self.model, input=texts)
-        return [data.embedding for data in response.data]
+        result: List[List[float]] = []
+        for i in range(0, len(texts), self.BATCH_SIZE):
+            batch = texts[i:i + self.BATCH_SIZE]
+            response = self.client.embeddings.create(model=self.model, input=batch)
+            result.extend(data.embedding for data in response.data)
+        return result
     
     def embed_query(self, text: str) -> List[float]:
         response = self.client.embeddings.create(model=self.model, input=[text])
@@ -64,7 +71,7 @@ class GenerationState(TypedDict):
 # =============================================================================
 # 模型初始化
 # =============================================================================
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+embeddings = OpenAIEmbeddings(model="text-embedding-v3")
 
 
 # =============================================================================
@@ -124,7 +131,7 @@ def generate_summary(chunk: str) -> str:
     target_length = int(chunk_length * 0.3)  # 目标长度为原文的30%
     
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="qwen-plus",
         messages=[
             {
                 "role": "system", 
@@ -144,7 +151,7 @@ def generate_summary(chunk: str) -> str:
     # 如果摘要仍然过长，进行二次压缩
     if len(summary) > target_length:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="qwen-plus",
             messages=[
                 {
                     "role": "system", 
@@ -186,7 +193,7 @@ def build_planning_tree(summaries: List[str]) -> Dict:
     }}
     """
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="qwen-plus",
         messages=[{"role": "user", "content": prompt}],
         temperature=0
     )
@@ -235,7 +242,7 @@ def generate_section_content(title: str, context: str) -> str:
     5. 体现专业深度和分析价值
     """
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="qwen-plus",
         messages=[{"role": "user", "content": prompt}],
         temperature=0
     )
@@ -316,7 +323,7 @@ def summarize_and_memorize_node(state: GenerationState) -> GenerationState:
     # 显示向量存储的关键信息
     print(f"📊 向量存储统计:")
     print(f"   存储文档数: {len(summaries)}")
-    print(f"   向量维度: 1536 (text-embedding-3-small)")
+    print(f"   向量维度: 1024 (text-embedding-v3)")
     
     # 提取并显示关键词索引
     print(f"\n🔑 关键词索引:")

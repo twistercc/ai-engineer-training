@@ -17,7 +17,7 @@ base_url = os.getenv('OPENAI_API_BASE')
 llm = ChatOpenAI(
     base_url=base_url,
     api_key=api_key,
-    model="gpt-4o",
+    model="qwen-max",
     temperature=0.7  # LangChain 特点：统一的参数配置
 )
 
